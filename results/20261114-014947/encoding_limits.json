@@ -1,0 +1,11 @@
+{
+  "hash-max-listpack-entries": {
+    "hash-max-listpack-entries": "512"
+  },
+  "set-max-intset-entries": {
+    "set-max-intset-entries": "512"
+  },
+  "zset-max-listpack-entries": {
+    "zset-max-listpack-entries": "128"
+  }
+}

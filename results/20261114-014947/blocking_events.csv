@@ -1,0 +1,5 @@
+event,start_ms,end_ms,duration_ms,server_ms
+"KEYS * (1,000,000 keys)",501.235,2345.993,1844.758,183.441
+SCAN full iteration,2846.791,5239.268,2392.478,355.026
+"DEL hash (1,000,000 fields)",5739.965,5852.799,112.834,112.4
+"UNLINK hash (1,000,000 fields)",6353.644,6353.863,0.219,0.011

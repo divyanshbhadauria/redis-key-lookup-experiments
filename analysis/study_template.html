@@ -1,0 +1,229 @@
+<title>Redis Key Lookup Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a single reading column (lab notebook) where charts and tables break out slightly wider. */
+:root {
+  --bg: #fbfaf8; --surface: #f2f0ec; --ink: #17151a; --ink-2: #4f4b52; --muted: #86818a;
+  --rule: #e2ded8; --accent: #b8342a;
+  --s1: #2a78d6; --s2: #eb6834; --band: #ece8e1; --tip-bg: #17151a; --tip-fg: #f4f2ee;
+  --f-display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #141215; --surface: #1d1b1f; --ink: #f0eef1; --ink-2: #c4c0c8; --muted: #8f8a95;
+  --rule: #2e2b31; --accent: #ec6a5e; --s1: #3987e5; --s2: #d95926; --band: #242127;
+  --tip-bg: #f0eef1; --tip-fg: #141215; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #141215; --surface: #1d1b1f; --ink: #f0eef1; --ink-2: #c4c0c8; --muted: #8f8a95;
+  --rule: #2e2b31; --accent: #ec6a5e; --s1: #3987e5; --s2: #d95926; --band: #242127;
+  --tip-bg: #f0eef1; --tip-fg: #141215; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font: 400 1.0625rem/1.65 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main { max-width: 760px; margin: 0 auto; padding-block: 56px 96px; display: grid; gap: 64px; }
+section { display: grid; gap: 18px; min-width: 0; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.04; font-weight: 800; }
+h2 { font-size: 1.6rem; line-height: 1.2; font-weight: 700; }
+h3 { font-size: 1rem; font-weight: 700; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font: 600 0.75rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.lede { font-size: 1.2rem; color: var(--ink-2); }
+.byline { font: 500 0.85rem/1.4 var(--f-mono); color: var(--muted); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+p code, li code, td code { background: var(--surface); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--accent); }
+
+.figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px; background: var(--rule); border-block: 1px solid var(--rule); }
+.fig { background: var(--bg); padding: 16px 14px 16px 0; display: grid; gap: 4px; align-content: start; }
+.fig b { font: 700 1.9rem/1 var(--f-display); font-variant-numeric: tabular-nums; }
+.fig b small { font-size: 0.55em; font-weight: 500; color: var(--ink-2); margin-left: 2px; }
+.fig span { font-size: 0.9rem; color: var(--ink-2); line-height: 1.35; }
+
+.finding { font: 600 1.15rem/1.45 var(--f-body); border-left: 3px solid var(--accent); padding-left: 14px; max-width: 62ch; }
+.chart-wrap { position: relative; overflow-x: auto; }
+.chart { width: 100%; min-width: 520px; height: auto; display: block; font-family: var(--f-mono); }
+.chart .grid { stroke: var(--rule); stroke-width: 1; }
+.chart .axis { stroke: var(--muted); stroke-width: 1; }
+.chart .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.chart .label { fill: var(--ink-2); font-size: 12px; }
+.chart .note { fill: var(--ink-2); font-size: 11px; }
+.chart .band { fill: var(--band); }
+.chart .vline { stroke: var(--muted); stroke-width: 1; }
+.chart polyline { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.chart .s1 { stroke: var(--s1); } .chart .s2 { stroke: var(--ink); } .chart .s3 { stroke: var(--s2); }
+.chart .faint { opacity: 0.55; }
+.chart .dot { stroke: var(--bg); stroke-width: 2; } .chart .dot.s1 { fill: var(--s1); } .chart .dot.s3 { fill: var(--s2); }
+.chart .cross { stroke: var(--ink-2); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--tip-bg); color: var(--tip-fg); font: 400 12px/1.4 var(--f-mono);
+  padding: 6px 9px; border-radius: 6px; white-space: nowrap; transform: translate(-50%, -110%); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 400 0.8rem/1.3 var(--f-mono); color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
+.sw.s1 { background: var(--s1); } .sw.s2 { background: var(--ink); } .sw.s3 { background: var(--s2); }
+.sw.band { background: var(--band); height: 10px; width: 14px; }
+.caption { font-size: 0.9rem; color: var(--ink-2); }
+
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font: 400 0.85rem/1.4 var(--f-mono); font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--muted); padding: 6px 12px 6px 0; white-space: nowrap; }
+td { border-bottom: 1px solid var(--rule); padding: 7px 12px 7px 0; white-space: nowrap; }
+
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(0, 15rem) 1fr 5.5rem; gap: 12px; align-items: center; font: 400 0.85rem/1.3 var(--f-mono); }
+.bar-name { color: var(--ink-2); }
+.bar-track { height: 14px; }
+.bar { display: block; height: 100%; background: var(--s1); border-radius: 0 4px 4px 0; }
+.bar-val { text-align: right; font-variant-numeric: tabular-nums; }
+@media (max-width: 560px) { .bar-row { grid-template-columns: 1fr 5rem; } .bar-name { grid-column: 1 / -1; } }
+
+pre { margin: 0; background: var(--surface); padding: 14px 16px; border-radius: 8px; overflow-x: auto;
+  font: 400 0.8rem/1.55 var(--f-mono); color: var(--ink); }
+.setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.setup > div { display: grid; gap: 10px; align-content: start; min-width: 0; }
+dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; font: 400 0.85rem/1.4 var(--f-mono); }
+dt { color: var(--muted); } dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+ul { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; max-width: 65ch; }
+details summary { cursor: pointer; font: 600 0.85rem/1.4 var(--f-mono); color: var(--ink-2); }
+details[open] summary { margin-bottom: 10px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+footer { font: 400 0.8rem/1.5 var(--f-mono); color: var(--muted); border-top: 1px solid var(--rule); padding-top: 18px; }
+</style>
+
+<main>
+  <header style="display:grid;gap:18px">
+    <span class="eyebrow">Experiment notebook · redis unstable @ {{SHA}}</span>
+    <h1>What actually happens when Redis looks up a key</h1>
+    <p class="lede">Six experiments on a Redis server built from source on a 2015 laptop: how lookup time scales, what it costs when the hash table grows, where compact encodings stop paying off, how one slow command stalls every client, and how long expired keys keep using memory.</p>
+    <span class="byline">Divyansh · run {{RUN}} · {{STARTED}}</span>
+  </header>
+
+  <div class="figures">
+    <div class="fig"><b>{{GET_MAX}}<small>µs</small></b><span>slowest GET inside Redis, at any size up to {{MAXKEYS}} keys</span></div>
+    <div class="fig"><b>{{RH_RATIO}}×</b><span>server time per write while the hash table is resizing</span></div>
+    <div class="fig"><b>{{KEYS_MS}}<small>ms</small></b><span>every other client waits while <code>KEYS *</code> runs on 1M keys</span></div>
+    <div class="fig"><b>{{T100}}<small>s</small></b><span>for 1M expired, unread keys to be removed from memory</span></div>
+  </div>
+
+  <section>
+    <span class="eyebrow">Lookup cost</span>
+    <h2>GET is O(1), and the round trip costs ~{{RT_X}}× more than the lookup</h2>
+    <p class="finding">A GET took {{GET_MIN}}–{{GET_MAX}} µs inside Redis whether the database held 1,000 keys or {{MAXKEYS}}. The Python client saw a ~{{CLIENT_P50}} µs round trip for the same call.</p>
+    <div class="chart-wrap">{{SC_CHART}}</div>
+    <p class="caption">Server time from <code>INFO commandstats</code> (<code>usec_per_call</code>), 10,000 random GETs per size; keys created with <code>DEBUG POPULATE</code>. Memory came to ~{{MEM_PER_KEY}} bytes per key including overhead.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Rehashing</span>
+    <h2>When the table doubles, writes slow down for a long stretch, not for one big pause</h2>
+    <p class="finding">Each time the key count passes a power of two, Redis allocates a table twice the size and moves buckets over a few at a time on later commands. While that runs, a batch of 1,000 SETs costs {{MED_IN}} µs instead of {{MED_OUT}} µs.</p>
+    {{LEGEND_RH}}
+    <div class="chart-wrap">{{RH_CHART}}</div>
+    <p class="caption">4.3M SETs in pipelined batches of 1,000. Server time per batch is the change in <code>cmdstat_set usec</code>; a rehash is in progress whenever <code>mem_overhead_db_hashtable_rehashing</code> is non-zero ({{N_RH}} resizes detected). The spike at the start of each shaded stretch is allocating the new bucket array.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Table resize at</th><th>Started at keys</th><th>Lasted (inserts)</th><th>New table</th></tr></thead>
+      <tbody>{{RH_ROWS}}</tbody>
+    </table></div>
+    <p>Each completed resize lasted for roughly {{RH_LASTED}} × the table size in inserts. The run happened to end in the middle of the 2²² resize, and <code>DEBUG HTSTATS</code> shows keys in two tables at once:</p>
+    <pre>{{HTSTATS}}</pre>
+  </section>
+
+  <section>
+    <span class="eyebrow">Encodings</span>
+    <h2>Small collections trade lookup speed for memory, up to a configured limit</h2>
+    <p class="finding">A small hash is stored as a <code>listpack</code>, a packed array that is scanned from the start. At {{H_LAST}} fields HGET took {{H_US_B}} µs. At {{H_AT}} Redis converts it to a real hash table: HGET drops to {{H_US_A}} µs and total memory grows {{H_MEMX}}×.</p>
+    {{LEGEND_ENC}}
+    <div class="chart-wrap">{{ENC_CHART}}</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Type</th><th>Conversion</th><th>At</th><th>Bytes / element</th><th>Memory</th><th>Lookup µs</th></tr></thead>
+      <tbody>{{ENC_ROWS}}</tbody>
+    </table></div>
+    <p class="caption">One collection per size from 8 to 1,024 elements; <code>OBJECT ENCODING</code>, <code>MEMORY USAGE</code>, and server time over 1,000 random lookups. Sorted sets on this build convert to a packed B+ tree (<code>src/zset_btree.c</code>), not the skiplist older releases use.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Single thread</span>
+    <h2>One slow command makes every client wait</h2>
+    <p class="finding">A separate process sent GETs nonstop (normally {{BASE_US}} µs each) while another client ran expensive commands. During <code>KEYS *</code> its GETs waited up to {{KEYS_MS}} ms; <code>DEL</code> on a 1M-field hash held everyone for {{DEL_MS}} ms. <code>SCAN</code> and <code>UNLINK</code> did the same jobs with stalls of {{SCAN_MS}} ms and {{UNLINK_MS}} ms.</p>
+    <div class="bars" role="img" aria-label="Longest GET stall per command">{{BL_ROWS}}</div>
+    <p class="caption">Longest wait seen by the probing client while each command ran, on a database of 1M keys. <code>SCAN</code> does more total work ({{SCAN_SERVER}} ms of server time) but in small steps. <code>UNLINK</code> passes the freeing work to a background thread.</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Pipelining</span>
+    <h2>Batching commands gave {{PP_X}}× the throughput</h2>
+    <p class="finding">One GET per round trip reached {{PP_1}} ops/s. Sending 1,000 per round trip reached {{PP_MAX}} ops/s; beyond a few hundred, the Python client becomes the limit, not Redis.</p>
+    <div class="chart-wrap">{{PP_CHART}}</div>
+  </section>
+
+  <section>
+    <span class="eyebrow">Expiry</span>
+    <h2>Expired keys keep their memory until the background cycle finds them</h2>
+    <p class="finding">1M keys all expired at the same instant and nobody read them. Half were gone {{T50}} s later, all of them after {{T100}} s, and until then they held their share of {{EX_MEM}} MB.</p>
+    <div class="chart-wrap">{{EX_CHART}}</div>
+    <p class="caption">Keys written with one absolute deadline (<code>PXAT</code>). Removal comes only from the active expire cycle, run <code>hz</code> = 10 times a second under a CPU budget (<code>active-expire-effort</code> = 1).</p>
+  </section>
+
+  <section>
+    <span class="eyebrow">Setup</span>
+    <h2>Hardware, build and configuration</h2>
+    <div class="setup">
+      <div>
+        <h3>Machine</h3>
+        <dl>
+          <dt>CPU</dt><dd>Intel Core i5-5350U, 2 cores / 4 threads, 1.8–2.9 GHz</dd>
+          <dt>RAM</dt><dd>8 GB</dd>
+          <dt>OS</dt><dd>Linux 7.2.5 (Omarchy)</dd>
+          <dt>Network</dt><dd>loopback, client and server on the same host</dd>
+        </dl>
+      </div>
+      <div>
+        <h3>Redis</h3>
+        <dl>
+          <dt>Source</dt><dd>github.com/redis/redis, unstable @ {{SHA}} (2026-11-13)</dd>
+          <dt>Build</dt><dd><code>make</code>, GCC 16.2.1, jemalloc 5.3.0, epoll</dd>
+          <dt>Threads</dt><dd>io-threads 1</dd>
+          <dt>Defaults kept</dt><dd>hz 10, active-expire-effort 1, activerehashing yes, maxmemory 0, hash-max-listpack-entries 512, set-max-intset-entries 512, zset-max-listpack-entries 128</dd>
+          <dt>Client</dt><dd>Python 3.14.7, redis-py 8.1.0</dd>
+        </dl>
+      </div>
+    </div>
+    <details>
+      <summary>redis-experiments.conf</summary>
+      <pre>{{CONF}}</pre>
+    </details>
+    <h3>Method notes</h3>
+    <ul>
+      <li>Server-side numbers come from <code>INFO commandstats</code>, so they leave out the network and the Python client. Client numbers are shown only where the round trip is the point.</li>
+      <li>The blocking probe runs in its own process. A first version used a thread, and Python's GIL stalled it whenever the main thread parsed a large reply. That made <code>KEYS *</code> look like 600 ms of blocking when the server spent 58 ms.</li>
+      <li>Each experiment starts from <code>FLUSHALL</code>. Persistence is off so snapshots and AOF writes don't add noise.</li>
+      <li>Single run on a laptop with frequency scaling on. Treat the absolute numbers as this machine's; the shapes and ratios are the findings.</li>
+    </ul>
+  </section>
+
+  <footer>Experiments: <code>experiments/run_tests.py</code> · analysis: <code>analysis/analyze.py</code> · this page: <code>analysis/build_study.py</code></footer>
+</main>
+
+<script>
+document.querySelectorAll('script[data-for]').forEach(function (s) {
+  var svg = document.getElementById(s.dataset.for); if (!svg) return;
+  var pts = JSON.parse(s.textContent), wrap = svg.parentNode, hover = svg.querySelector('.hover'),
+      cross = hover.querySelector('.cross'), tip = document.createElement('div');
+  tip.className = 'tip'; tip.hidden = true; wrap.appendChild(tip);
+  function move(e) {
+    var r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - r.left) * vb.width / r.width;
+    var best = pts[0];
+    for (var i = 1; i < pts.length; i++) if (Math.abs(pts[i][0] - x) < Math.abs(best[0] - x)) best = pts[i];
+    cross.setAttribute('x1', best[0]); cross.setAttribute('x2', best[0]); hover.setAttribute('visibility', 'visible');
+    tip.textContent = best[1]; tip.hidden = false;
+    var px = best[0] * r.width / vb.width + svg.offsetLeft - wrap.scrollLeft;
+    tip.style.left = Math.min(Math.max(px, 120), wrap.clientWidth - 120) + 'px';
+    tip.style.top = (e.clientY - r.top + svg.offsetTop) + 'px';
+  }
+  svg.addEventListener('pointermove', move);
+  svg.addEventListener('pointerleave', function () { hover.setAttribute('visibility', 'hidden'); tip.hidden = true; });
+});
+</script>

@@ -1,0 +1,27 @@
+{
+  "run_id": "20261114-014947",
+  "quick": false,
+  "experiments": [
+    "scaling",
+    "rehash",
+    "encoding",
+    "blocking",
+    "pipeline",
+    "expiry"
+  ],
+  "redis_version": "255.255.255",
+  "redis_git_sha1": "ee8e7f70",
+  "io_threads": "1",
+  "host": "omarchy",
+  "python": "3.14.7",
+  "started": "2026-11-14T01:49:47",
+  "durations_s": {
+    "scaling": 9.4,
+    "rehash": 65.8,
+    "encoding": 42.9,
+    "blocking": 14.9,
+    "pipeline": 46.6,
+    "expiry": 50.1
+  },
+  "finished": "2026-11-14T01:53:37"
+}

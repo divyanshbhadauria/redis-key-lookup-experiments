@@ -1,0 +1,12 @@
+# Redis source is cloned and built locally (see README)
+redis/
+.venv/
+data/
+__pycache__/
+# smoke runs and logs
+results/*-quick/
+results/*.log
+# intermediate file used for Medium paste
+study/medium/paste.html
+study/medium/title.txt
+build.log

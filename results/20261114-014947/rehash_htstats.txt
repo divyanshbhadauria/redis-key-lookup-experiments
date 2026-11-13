@@ -1,0 +1,8 @@
+[Dictionary HT]
+Hash table 0 stats (main hash table):
+ table size: 4194304
+ number of elements: 3962738
+Hash table 1 stats (rehashing target):
+ table size: 8388608
+ number of elements: 337262
+[Expires HT]
