@@ -158,4 +158,4 @@ Caveat: this is one run on one laptop with CPU frequency scaling on. Don't take 
 
 Next I want to try raising `hz` and `active-expire-effort` to see how much faster expiry gets, and compare the new B+ tree sorted set with the old skiplist from Redis 7.2.
 
-All the scripts are here if you want to run it yourself: [link to your repo]
+All the scripts are here if you want to run it yourself: https://github.com/divyanshbhadauria/redis-key-lookup-experiments
