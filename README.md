@@ -8,7 +8,8 @@ experiments/run_tests.py   runs the experiments, writes raw CSVs to results/<run
 analysis/analyze.py        reads a run, writes results/<run_id>/report.md and plots/*.png
 analysis/build_study.py    builds study/redis-study.html (the write-up page) from a run
 results/20261114-014947/   the full run the write-up is based on (raw CSVs, plots, report.md)
-study/medium/              the Medium article and its images
+results/20261114-024346/   the expiry_load run behind the follow-up post
+study/medium/              the Medium article and its images (expiry-under-load/: the follow-up)
 data/                      redis.log, pid file
 .venv/                     python deps (redis, pandas, matplotlib, tabulate)
 ```
@@ -41,6 +42,15 @@ scripts/redis.sh stop
 | `blocking` | How much does one slow command hurt everyone else? | separate-process GET probe while running KEYS, SCAN, DEL, UNLINK |
 | `pipeline` | How much is round-trip vs. server work? | GET throughput at pipeline depth 1…1000 |
 | `expiry` | How fast are expired-but-unread keys reclaimed? | 1M keys with one shared PXAT deadline; poll DBSIZE / `expired_keys` |
+| `expiry_load` | What happens when mass expiry, bulk writes and a main-table resize overlap? | 4 scenarios around 2^22 keys: 2 writer processes, a GET probe process, 50 ms polls of `INFO` + `DEBUG HTSTATS` |
+
+Extra scripts for the follow-up post (`study/medium/expiry-under-load/`):
+
+```bash
+.venv/bin/python analysis/expiry_load.py results/<run_id>                 # report + plot for expiry_load
+.venv/bin/python experiments/expiry_idle_vs_busy.py results/<run_id>      # same 1M expiring keys, idle vs busy server
+.venv/bin/python analysis/medium_expiry_load.py results/<run_id> study/medium/expiry-under-load/images
+```
 
 ## Method notes
 

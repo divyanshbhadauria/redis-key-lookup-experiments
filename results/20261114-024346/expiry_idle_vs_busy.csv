@@ -1,0 +1,219 @@
+mode,t_s,expiring_left
+idle server,-0.992,1000000
+idle server,-0.941,1000000
+idle server,-0.89,1000000
+idle server,-0.839,1000000
+idle server,-0.788,1000000
+idle server,-0.737,1000000
+idle server,-0.686,1000000
+idle server,-0.635,1000000
+idle server,-0.582,1000000
+idle server,-0.531,1000000
+idle server,-0.48,1000000
+idle server,-0.429,1000000
+idle server,-0.378,1000000
+idle server,-0.327,1000000
+idle server,-0.275,1000000
+idle server,-0.225,1000000
+idle server,-0.174,1000000
+idle server,-0.123,1000000
+idle server,-0.071,1000000
+idle server,-0.02,1000000
+idle server,0.031,1000000
+idle server,0.082,1000000
+idle server,0.135,988166
+idle server,0.188,987491
+idle server,0.254,974683
+idle server,0.307,974683
+idle server,0.38,961856
+idle server,0.433,961856
+idle server,0.507,948698
+idle server,0.56,948698
+idle server,0.634,935544
+idle server,0.686,935544
+idle server,0.759,922711
+idle server,0.812,922711
+idle server,0.885,907585
+idle server,0.938,907585
+idle server,1.011,894438
+idle server,1.064,894438
+idle server,1.138,881268
+idle server,1.191,881268
+idle server,1.265,868114
+idle server,1.318,868114
+idle server,1.391,851669
+idle server,1.444,851669
+idle server,1.517,828673
+idle server,1.569,828673
+idle server,1.644,814227
+idle server,1.696,814227
+idle server,1.77,801072
+idle server,1.823,801072
+idle server,1.897,787935
+idle server,1.949,787935
+idle server,2.023,774794
+idle server,2.077,774794
+idle server,2.149,761967
+idle server,2.202,761967
+idle server,2.276,748833
+idle server,2.329,748833
+idle server,2.403,735676
+idle server,2.455,735676
+idle server,2.529,722495
+idle server,2.582,722495
+idle server,2.656,709339
+idle server,2.709,709339
+idle server,2.783,696201
+idle server,2.835,696201
+idle server,2.909,683055
+idle server,2.962,683055
+idle server,3.036,670201
+idle server,3.088,670201
+idle server,3.162,657017
+idle server,3.215,657017
+idle server,3.288,641239
+idle server,3.341,641239
+idle server,3.415,628090
+idle server,3.468,628090
+idle server,3.54,602483
+idle server,3.592,602483
+idle server,3.666,585718
+idle server,3.719,585718
+idle server,3.794,572557
+idle server,3.847,572557
+idle server,3.92,559718
+idle server,3.973,559718
+idle server,4.048,549174
+idle server,4.101,549174
+idle server,4.174,536020
+idle server,4.226,536020
+idle server,4.299,503884
+idle server,4.35,503884
+idle server,4.426,483495
+idle server,4.478,483495
+idle server,4.552,467364
+idle server,4.605,467364
+idle server,4.68,454193
+idle server,4.732,454193
+idle server,4.806,441049
+idle server,4.859,441049
+idle server,4.933,427849
+idle server,4.985,427849
+idle server,5.059,416002
+idle server,5.111,416002
+idle server,5.185,403846
+idle server,5.238,403846
+idle server,5.311,389024
+idle server,5.364,389024
+idle server,5.439,375819
+idle server,5.491,375819
+idle server,5.565,362659
+idle server,5.618,362659
+idle server,5.692,347851
+idle server,5.745,347851
+idle server,5.819,334687
+idle server,5.871,334687
+idle server,5.944,312988
+idle server,5.996,312988
+idle server,6.071,298873
+idle server,6.123,298873
+idle server,6.197,288680
+idle server,6.25,288680
+idle server,6.323,275840
+idle server,6.376,275840
+idle server,6.45,262675
+idle server,6.503,262675
+idle server,6.576,249496
+idle server,6.629,249496
+idle server,6.703,236331
+idle server,6.756,236331
+idle server,6.829,223156
+idle server,6.882,223156
+idle server,6.956,209983
+idle server,7.009,209983
+idle server,7.082,197141
+idle server,7.134,197141
+idle server,7.209,184285
+idle server,7.262,184285
+idle server,7.335,171081
+idle server,7.388,171081
+idle server,7.462,157929
+idle server,7.515,157929
+idle server,7.588,144738
+idle server,7.641,144738
+idle server,7.715,131563
+idle server,7.768,131563
+idle server,7.843,118603
+idle server,7.895,118603
+idle server,7.97,105568
+idle server,8.023,105568
+idle server,8.099,93548
+idle server,8.152,93165
+idle server,8.225,79692
+idle server,8.277,79692
+idle server,8.352,66647
+idle server,8.405,66647
+idle server,8.479,53702
+idle server,8.532,53702
+idle server,8.606,28011
+idle server,8.658,28011
+idle server,8.734,11994
+idle server,8.786,11994
+idle server,8.838,11795
+idle server,8.889,11795
+idle server,8.94,11795
+idle server,8.991,11795
+idle server,9.048,10811
+idle server,9.101,10657
+idle server,9.162,1446
+idle server,9.218,1446
+idle server,9.269,0
+one busy client,-0.999,1000000
+one busy client,-0.949,1000000
+one busy client,-0.898,1000000
+one busy client,-0.848,1000000
+one busy client,-0.797,1000000
+one busy client,-0.747,1000000
+one busy client,-0.697,1000000
+one busy client,-0.646,1000000
+one busy client,-0.596,1000000
+one busy client,-0.546,1000000
+one busy client,-0.495,1000000
+one busy client,-0.445,1000000
+one busy client,-0.395,1000000
+one busy client,-0.344,1000000
+one busy client,-0.294,1000000
+one busy client,-0.243,1000000
+one busy client,-0.193,1000000
+one busy client,-0.142,1000000
+one busy client,-0.092,1000000
+one busy client,-0.042,1000000
+one busy client,0.009,1000000
+one busy client,0.059,1000000
+one busy client,0.112,967583
+one busy client,0.163,938601
+one busy client,0.238,886374
+one busy client,0.288,856069
+one busy client,0.364,793670
+one busy client,0.415,761767
+one busy client,0.49,698726
+one busy client,0.54,666778
+one busy client,0.616,602072
+one busy client,0.666,572104
+one busy client,0.742,507385
+one busy client,0.792,478716
+one busy client,0.868,414625
+one busy client,0.919,381327
+one busy client,0.993,317902
+one busy client,1.043,286026
+one busy client,1.118,221245
+one busy client,1.17,187945
+one busy client,1.245,129061
+one busy client,1.296,97509
+one busy client,1.372,34717
+one busy client,1.422,11789
+one busy client,1.472,11789
+one busy client,1.523,11789
+one busy client,1.573,11789
+one busy client,1.624,11789
+one busy client,1.688,0

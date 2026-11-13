@@ -305,6 +305,146 @@ def exp_expiry(r, out, quick):
     write_csv(out / "expiry.csv", rows)
 
 
+LOAD_SCENARIOS = {
+    # name: (persistent keys, keys expiring at t=0, write new keys at t=0?)
+    "writes_only":        (4_150_000, 0,         True),   # 2M writes cross 2^22 -> rehash
+    "expiry_only":        (3_150_000, 1_000_000, False),  # active expiry alone
+    "expiry_plus_writes": (3_150_000, 1_000_000, True),   # expiry + writes (+ rehash) together
+    "writes_presized":    (4_200_000, 0,         True),   # table already 2^23: same writes, no resize
+}
+
+
+def _ht_sizes(text, section):
+    """Parse DEBUG HTSTATS: table sizes of ht0 / ht1 (rehash target) for one section."""
+    import re
+    part = text.split(f"[{section}]", 1)[1].split("[", 1)[0] if f"[{section}]" in text else ""
+    sizes = [int(x) for x in re.findall(r"table size: (\d+)", part)]
+    return (sizes + [0, 0])[:2]
+
+
+def exp_expiry_load(r, out, quick):
+    """
+    Mass expiry, bulk writes and a main-table resize happening at the same time.
+
+    Per scenario: prefill, give some keys one shared PXAT deadline (t=0), then at
+    t=0 two writer processes add new keys in pipelined batches. A third process
+    sends single GETs throughout (the latency other clients see), and this
+    process polls DBSIZE, memory and hash-table sizes every 50 ms.
+    """
+    scale = 0.25 if quick else 1.0
+    new_keys = int(2_000_000 * scale)
+    writers = 2
+    kw = {k: r.connection_pool.connection_kwargs[k] for k in ("host", "port")}
+    probe_rows, writer_rows, poll_rows, summary = [], [], [], []
+
+    for name, (persist, expiring, do_writes) in LOAD_SCENARIOS.items():
+        persist, expiring = int(persist * scale), int(expiring * scale)
+        print(f"    {name}: {persist:,} persistent + {expiring:,} expiring, writes={do_writes}")
+        r.flushall()
+        r.config_resetstat()
+        r.execute_command("DEBUG", "POPULATE", persist + expiring, "key", 16)
+        lead_s = 6
+        deadline_ms = int(time.time() * 1000) + lead_s * 1000
+        t0_mono = time.monotonic() + (deadline_ms / 1000 - time.time())
+        if expiring:
+            lua = ("for i=tonumber(ARGV[1]),tonumber(ARGV[2])-1 do "
+                   "redis.call('PEXPIREAT','key:'..i,ARGV[3]) end return 1")
+            for s in range(persist, persist + expiring, 100_000):
+                r.eval(lua, 0, s, min(s + 100_000, persist + expiring), deadline_ms)
+        if time.monotonic() > t0_mono - 2:
+            raise RuntimeError("prefill ran past the deadline; raise lead_s")
+        stop, q = mp.Event(), mp.Queue()
+        procs = [mp.Process(target=_load_prober, args=(kw, persist, t0_mono, stop, q), daemon=True)]
+        if do_writes:
+            per = new_keys // writers
+            procs += [mp.Process(target=_load_writer, args=(kw, w, per, t0_mono, q), daemon=True)
+                      for w in range(writers)]
+        for p in procs:
+            p.start()
+
+        start_poll = t0_mono - 1.5
+        while time.monotonic() < start_poll:
+            time.sleep(0.01)
+        writers_done, done_at = 0, None
+        results = []
+        target = persist + (new_keys if do_writes else 0)
+        while True:
+            t = time.monotonic() - t0_mono
+            info = r.info()
+            ht = r.execute_command("DEBUG", "HTSTATS", 0)
+            m0, m1 = _ht_sizes(ht, "Dictionary HT")
+            e0, e1 = _ht_sizes(ht, "Expires HT")
+            db0 = info.get("db0", {})
+            poll_rows.append({
+                "scenario": name, "t_s": round(t, 3),
+                "dbsize": db0.get("keys", 0), "expires": db0.get("expires", 0),
+                "expired_keys": info["expired_keys"],
+                "used_memory_mb": round(info["used_memory"] / 2**20, 1),
+                "rehashing_overhead_mb": round(info.get("mem_overhead_db_hashtable_rehashing", 0) / 2**20, 1),
+                "main_ht0": m0, "main_ht1": m1, "exp_ht0": e0, "exp_ht1": e1,
+            })
+            while not q.empty():
+                results.append(q.get())
+            writers_done = sum(1 for x in results if x[0] == "writer")
+            settled = (poll_rows[-1]["dbsize"] == target and poll_rows[-1]["main_ht1"] == 0
+                       and poll_rows[-1]["exp_ht1"] == 0 and (not do_writes or writers_done == writers))
+            if settled and done_at is None:
+                done_at = round(t, 2)
+            if (done_at is not None and t > done_at + 2) or t > 90:
+                break
+            time.sleep(0.05)
+        stop.set()
+        while len([x for x in results if x[0] == "probe"]) < 1:
+            results.append(q.get())
+        for p in procs:
+            p.join()
+        for kind, rows in results:
+            for row in rows:
+                row["scenario"] = name
+            (probe_rows if kind == "probe" else writer_rows).extend(rows)
+        cs = r.info("commandstats")
+        summary.append({"scenario": name, "settled_s": done_at,
+                        "server_set_usec_per_call": cs.get("cmdstat_set", {}).get("usec_per_call"),
+                        "server_get_usec_per_call": cs.get("cmdstat_get", {}).get("usec_per_call")})
+        print(f"      settled at t={done_at}s")
+
+    write_csv(out / "expiry_load_probe.csv", probe_rows)
+    write_csv(out / "expiry_load_writer.csv", writer_rows)
+    write_csv(out / "expiry_load_poll.csv", poll_rows)
+    write_csv(out / "expiry_load_summary.csv", summary)
+    (out / "expiry_load_params.json").write_text(json.dumps(
+        {"scenarios": LOAD_SCENARIOS, "scale": scale, "new_keys": new_keys, "writers": writers,
+         "hz": r.config_get("hz")["hz"], "active_expire_effort": r.config_get("active-expire-effort")}))
+
+
+def _load_prober(kw, n_keys, t0_mono, stop, q):
+    pr = redis.Redis(**kw)
+    pr.ping()
+    rows = []
+    while not stop.is_set():
+        t = time.monotonic()
+        pr.get(f"key:{random.randrange(n_keys)}")
+        rows.append({"t_s": round(t - t0_mono, 4), "get_us": round((time.monotonic() - t) * 1e6, 1)})
+    q.put(("probe", rows))
+
+
+def _load_writer(kw, wid, n, t0_mono, q):
+    wr = redis.Redis(**kw)
+    wr.ping()
+    while time.monotonic() < t0_mono:
+        time.sleep(0.001)
+    rows, batch = [], 1_000
+    p = wr.pipeline(transaction=False)
+    for s in range(0, n, batch):
+        for i in range(s, s + batch):
+            p.set(f"new:{wid}:{i}", "v" * 16)
+        t = time.monotonic()
+        p.execute()
+        rows.append({"writer": wid, "t_s": round(t - t0_mono, 4),
+                     "batch_ms": round((time.monotonic() - t) * 1000, 3)})
+    q.put(("writer", rows))
+
+
 EXPERIMENTS = {
     "scaling": exp_scaling,
     "rehash": exp_rehash,
@@ -312,6 +452,7 @@ EXPERIMENTS = {
     "blocking": exp_blocking,
     "pipeline": exp_pipeline,
     "expiry": exp_expiry,
+    "expiry_load": exp_expiry_load,
 }
 
 

@@ -1,0 +1,1 @@
+{"scenarios": {"writes_only": [4150000, 0, true], "expiry_only": [3150000, 1000000, false], "expiry_plus_writes": [3150000, 1000000, true], "writes_presized": [4200000, 0, true]}, "scale": 1.0, "new_keys": 2000000, "writers": 2, "hz": "10", "active_expire_effort": {"active-expire-effort": "1"}}

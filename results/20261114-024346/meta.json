@@ -1,0 +1,17 @@
+{
+  "run_id": "20261114-024346",
+  "quick": false,
+  "experiments": [
+    "expiry_load"
+  ],
+  "redis_version": "255.255.255",
+  "redis_git_sha1": "ee8e7f70",
+  "io_threads": "1",
+  "host": "omarchy",
+  "python": "3.14.7",
+  "started": "2026-11-14T02:43:46",
+  "durations_s": {
+    "expiry_load": 181.2
+  },
+  "finished": "2026-11-14T02:46:47"
+}

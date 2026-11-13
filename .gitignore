@@ -10,3 +10,5 @@ results/*.log
 study/medium/paste.html
 study/medium/title.txt
 build.log
+study/medium/*/paste.html
+study/medium/*/title.txt

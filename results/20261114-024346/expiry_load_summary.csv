@@ -1,0 +1,5 @@
+scenario,settled_s,server_set_usec_per_call,server_get_usec_per_call
+writes_only,31.53,1.31,2.88
+expiry_only,1.66,,1.42
+expiry_plus_writes,67.8,0.74,1.92
+writes_presized,28.46,0.57,1.65
